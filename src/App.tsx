@@ -219,12 +219,13 @@ function App() {
               </div>
 
               <div className="flex-1 p-4 overflow-auto relative">
-                {loading && <div className="scan-bar pointer-events-none" />}
+                {loading && <div className="scan-bar pointer-events-none z-0" />}
                 <textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
+                  disabled={loading}
                   spellCheck={false}
-                  className="w-full h-full min-h-[200px] bg-transparent text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed resize-none focus:outline-none"
+                  className="relative z-20 w-full h-full min-h-[200px] bg-transparent text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed resize-none focus:outline-none disabled:opacity-60"
                 />
               </div>
             </section>
