@@ -1,33 +1,28 @@
-export function speakDiagnostic(riskLevel: string, summary: string): void {
+export async function speakDiagnostic(riskLevel: string, summary: string): Promise<void> {
   try {
-    if (typeof window === 'undefined') return
-    const synth = (window as any).speechSynthesis
-    if (!synth || typeof synth.speak !== 'function') return
+    const text = `Diagnóstico concluído. Nível de risco: ${riskLevel}. ${summary}`;
 
-    const text = `Diagnóstico concluído. Nível de risco: ${riskLevel}. ${summary}`
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const response = await fetch(`${apiUrl}/api/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'pt-BR'
-    utterance.rate = 1.05
-    utterance.pitch = 0.85
-    utterance.volume = 1
+    if (!response.ok) return;
 
-    // Prefer a pt-BR voice if available
-    const voices = synth.getVoices?.() || []
-    const ptVoice = voices.find((v: any) => v.lang && v.lang.toLowerCase().startsWith('pt-br'))
-    if (ptVoice) utterance.voice = ptVoice
-
-    synth.cancel()
-    synth.speak(utterance)
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play().catch(() => {
+      // Silent fallback
+    });
+    audio.onended = () => URL.revokeObjectURL(url);
   } catch {
     // Silent fallback
   }
 }
 
 export function isVoiceSupported(): boolean {
-  try {
-    return typeof window !== 'undefined' && !!(window as any).speechSynthesis
-  } catch {
-    return false
-  }
+  return typeof window !== 'undefined' && typeof Audio !== 'undefined';
 }

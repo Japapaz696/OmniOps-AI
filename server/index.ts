@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import OpenAI from 'openai';
 import { AnalysisRequestSchema } from './schemas/analysis';
 import { analyzeCodeWithAI } from './services/analyzer';
 
@@ -51,6 +52,30 @@ app.get('/api/telemetry', (req, res) => {
     queueType: 'BullMQ',
     activeJobs: 0,
   });
+});
+
+app.post('/api/tts', async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'text is required' });
+    }
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ error: 'OpenAI API key not configured' });
+    }
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const speech = await openai.audio.speech.create({
+      model: 'tts-1',
+      voice: 'onyx',
+      input: text,
+    });
+    const buffer = Buffer.from(await speech.arrayBuffer());
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.send(buffer);
+  } catch (error) {
+    console.error('TTS error:', error);
+    res.status(500).json({ error: 'TTS generation failed' });
+  }
 });
 
 if (process.env.NODE_ENV !== 'test') {
