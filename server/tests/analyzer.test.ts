@@ -41,6 +41,41 @@ describe('Heuristic Analyzer', () => {
     expect(result.rootCause.toLowerCase()).toContain('teste');
   });
 
+  it('deve detectar XSS via dangerouslySetInnerHTML', () => {
+    const code = `function Comment({ text }) {
+      return <div dangerouslySetInnerHTML={{ __html: text }} />;
+    }`;
+
+    const result = analyzeCodeHeuristically(code);
+    expect(result.riskLevel).toBe('CRÍTICO');
+    expect(result.owaspTag).toContain('XSS');
+    expect(result.rootCause.toLowerCase()).toContain('dangerouslysetinnerhtml');
+  });
+
+  it('deve detectar CORS permissivo com origem curinga', () => {
+    const code = `app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      next();
+    });`;
+
+    const result = analyzeCodeHeuristically(code);
+    expect(result.riskLevel).toBe('CRÍTICO');
+    expect(result.owaspTag).toContain('CORS');
+    expect(result.diff.corrected).toContain('trusted-domain.com');
+  });
+
+  it('deve detectar ausência de rate limiting em rota de autenticação', () => {
+    const code = `app.post('/api/login', (req, res) => {
+      const { email, password } = req.body;
+      res.json({ ok: true });
+    });`;
+
+    const result = analyzeCodeHeuristically(code);
+    expect(result.riskLevel).toBe('ALTO');
+    expect(result.owaspTag).toContain('Rate Limiting');
+    expect(result.diff.corrected).toContain('rateLimit');
+  });
+
   it('deve retornar BAIXO risco para código seguro sem problemas óbvios', () => {
     const code = `const express = require('express');
     const app = express();

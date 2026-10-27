@@ -5,6 +5,42 @@ import Groq from 'groq-sdk';
 export function analyzeCodeHeuristically(code: string): AnalysisResponse {
   const lowerCode = code.toLowerCase();
   
+  if (lowerCode.includes('dangerouslysetinnerhtml')) {
+    return {
+      riskLevel: 'CRÍTICO',
+      owaspTag: 'A03:2021 - Cross-Site Scripting (XSS)',
+      rootCause: 'Uso de dangerouslySetInnerHTML sem sanitização pode permitir injeção de scripts (XSS)',
+      diff: {
+        original: '<div dangerouslySetInnerHTML={{ __html: userInput }} />',
+        corrected: '<div>{sanitize(userInput)}</div>',
+      },
+    };
+  }
+
+  if (lowerCode.includes('access-control-allow-origin') && (lowerCode.includes("'*'") || lowerCode.includes(' "*" ') || lowerCode.includes('"*"'))) {
+    return {
+      riskLevel: 'CRÍTICO',
+      owaspTag: 'A05:2021 - Security Misconfiguration (CORS)',
+      rootCause: 'CORS permissivo com origem curinga (*) permite requisições de qualquer domínio',
+      diff: {
+        original: "res.header('Access-Control-Allow-Origin', '*');",
+        corrected: "res.header('Access-Control-Allow-Origin', 'https://trusted-domain.com');",
+      },
+    };
+  }
+
+  if (/login|register|auth|\/api/.test(lowerCode) && !/rate.?limit|limiter|express-rate-limit/.test(lowerCode)) {
+    return {
+      riskLevel: 'ALTO',
+      owaspTag: 'A04:2021 - Insecure Design (Rate Limiting)',
+      rootCause: 'Ausência de middleware de limitação de taxa em rotas de autenticação/API',
+      diff: {
+        original: "app.post('/api/login', (req, res) => { ... });",
+        corrected: "const limiter = rateLimit({ windowMs: 15*60*1000, max: 5 });\napp.post('/api/login', limiter, (req, res) => { ... });",
+      },
+    };
+  }
+
   if ((lowerCode.includes('+ req.query') || (lowerCode.includes('req.query.') && lowerCode.includes('select')))) {
     return {
       riskLevel: 'CRÍTICO',
