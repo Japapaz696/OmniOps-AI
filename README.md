@@ -1,170 +1,112 @@
-# OmniOps AI
+# 🛡️ OmniOps AI — DevSecOps Platform & J.A.R.V.I.S. HUD
 
-[![Node.js](https://img.shields.io/badge/Node.js-20.x%2B-green.svg)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-5.x-blue.svg)](https://expressjs.com/)
-[![React](https://img.shields.io/badge/React-19.x-61DAFB.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.x-646CFF.svg)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Vitest-3.x-6E9F18.svg)](https://vitest.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.x-38B2AC.svg)](https://tailwindcss.com/)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
+> Plataforma tática de análise contínua de código, detecção de vulnerabilidades OWASP Top 10 e geração automática de patches com Inteligência Artificial.
 
-## Visão Geral & Proposta de Valor
-
-**OmniOps AI** é uma plataforma SaaS de DevSecOps projetada para análise estática de código, detecção automatizada de vulnerabilidades do OWASP Top 10 e sugestão autônoma de patches de segurança. 
-
-Combinando **LLMs** (Groq/OpenAI) com um motor heurístico robusto, o OmniOps AI oferece diagnóstico em tempo real, sugestões de correção com diffs visuais no estilo Git e telemetria completa para equipes de desenvolvimento e segurança.
-
-## Arquitetura & Fluxo de Dados
-
-```ascii
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
-│   Client     │───▶│  Express API │───▶│ Zod Validation│───▶│  Groq/OpenAI  │
-│  (React/Vite)│    │  (TypeScript)│    │  (Schema)     │    │ LLM + Structured│
-└─────────────┘    └──────────────┘    └─────────────┘    │   Outputs      │
-       ▲                   │                                    └──────────────┘
-       │                   │                                              │
-       │                   ▼                                              │
-       │            ┌──────────────┐                                      │
-       │            │   Fallback    │◀─────────────────────────────────────┘
-       │            │  Heurístico   │        (Timeout/Rate Limit/Falha)
-       │            │   Local       │
-       │            └──────────────┘
-       │                   │
-       └───────────────────┘
-              Response (JSON)
-```
-
-**Fluxo:** `Client ➔ Express API ➔ Zod Validation ➔ Groq/OpenAI LLM ➔ Fallback Heurístico ➔ Response`
-
-## Recursos Principais
-
-- **🤖 Análise com IA**: Integração com Groq SDK e OpenAI com Structured Outputs validados por Zod
-- **🛡️ Detecção OWASP Top 10**: Identificação automática de SQL Injection, credenciais expostas, falhas de design inseguro
-- **🔄 Fallback Inteligente**: Motor heurístico local garante disponibilidade mesmo sem chaves de API
-- **🎨 Split-Screen Playground**: Editor de código à esquerda com presets de vulnerabilidades, painel de diagnóstico à direita
-- **📊 Diffs Visuais**: Sugestões de correção com formatação Git-style (linhas vermelhas/verde)
-- **📈 Telemetria**: Latência da API, consumo de tokens, simulador de fila BullMQ
-- **✅ Testes Automatizados**: 9 testes (4 unitários + 5 integração) com 100% de aprovação
-- **🚀 CI/CD**: GitHub Actions com typecheck, testes e build em múltiplas versões Node.js
-
-## Especificação da API
-
-### `POST /api/analyze`
-Analisa código em busca de vulnerabilidades e retorna diagnóstico estruturado.
-
-**Request:**
-```json
-{
-  "code": "app.get('/user', (req, res) => { const query = \"SELECT * FROM users WHERE id = \" + req.query.id; ... });",
-  "model": "GPT-4o"
-}
-```
-
-**Response:**
-```json
-{
-  "riskLevel": "CRÍTICO",
-  "owaspTag": "A03:2021 - Injection",
-  "rootCause": "Concatenação direta de input do usuário na query SQL sem sanitização ou uso de prepared statements",
-  "diff": {
-    "original": "const query = \"SELECT * FROM users WHERE id = \" + req.query.id;",
-    "corrected": "const query = \"SELECT * FROM users WHERE id = ?\";\ndb.query(query, [req.query.id], (err, result) => {"
-  }
-}
-```
-
-### `GET /api/telemetry`
-Retorna métricas dinâmicas da plataforma.
-
-**Response:**
-```json
-{
-  "latency": 245,
-  "requestsProcessed": 1293,
-  "queueStatus": "Idle",
-  "queueType": "BullMQ",
-  "activeJobs": 0
-}
-```
-
-### `GET /api/health`
-Health check da API.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "service": "OmniOps AI API"
-}
-```
-
-## Guia de Instalação e Execução
-
-### Pré-requisitos
-- Node.js 20.x ou superior
-- npm ou yarn
-
-### Instalação
-```bash
-git clone https://github.com/Japapaz696/OmniOps-AI.git
-cd OmniOps-AI
-npm install
-```
-
-### Configuração (Opcional)
-Crie um arquivo `.env` na raiz:
-```env
-PORT=3001
-OPENAI_API_KEY=sk-...
-GROQ_API_KEY=gsk_...
-```
-*Sem chaves, o sistema utilizará o motor heurístico local automaticamente.*
-
-### Execução
-
-**Modo desenvolvimento (Fullstack):**
-```bash
-npm run dev
-```
-Roda frontend (Vite) e backend (Express + nodemon) simultaneamente com concurrently.
-
-**Testes:**
-```bash
-npm test
-```
-Executa a suíte Vitest - **9/9 testes aprovados (100%)**
-
-**TypeCheck:**
-```bash
-npm run typecheck
-```
-Verifica tipos TypeScript no frontend e backend
-
-**Build:**
-```bash
-npm run build
-```
-Compila frontend (Vite) e backend para produção
-
-**Preview:**
-```bash
-npm run preview
-```
-Visualiza build de produção
-
-## Tecnologias Utilizadas
-
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide React
-- **Backend:** Node.js, Express 5, TypeScript, Zod
-- **IA:** Groq SDK, OpenAI SDK
-- **Testes:** Vitest, Supertest
-- **DevOps:** GitHub Actions, Concurrently, Nodemon
-
-## Licença
-
-MIT License - Veja [LICENSE](LICENSE) para mais detalhes.
+![Build Pass](https://img.shields.io/badge/build-passing-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwindcss)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express)
+![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)
+![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render)
 
 ---
 
-**Desenvolvido com foco em segurança, performance e experiência do desenvolvedor.**
+## 🚀 Live Demo
+
+- **Frontend (Vercel):** https://omniops-ai.vercel.app
+- **Backend (Render):** https://omniops-backend.onrender.com
+
+---
+
+## ⚡ Destaques de Funcionalidades
+
+- 🤖 **Análise OWASP em tempo real** — detecção de SQL Injection, credenciais expostas, XSS, CORS permissivo e ausência de rate limiting.
+- 🔊 **Síntese de Voz (Web Speech API)** — feedback em áudio com voz futurista em `pt-BR`, com toggle ON/OFF no header.
+- 🧬 **Diffs de código** — comparação visual entre código vulnerável e patch corrigido.
+- 🧪 **Preset Heurístico** — regras determinísticas para análise offline sem dependência de LLM.
+- 🎛️ **Interface Tática J.A.R.V.I.S.** — HUD sci-fi com scanlines, grid cibernético, painéis angulares e widgets de telemetria.
+
+---
+
+## 🏗️ Arquitetura
+
+```
+┌────────────────────────┐        ┌──────────────────────────┐
+│  React + Vite (TSX)    │  HTTP  │  Express + ts-node (TS)  │
+│  Tailwind CSS          │ ─────► │  Zod (validação)         │
+│  Web Speech API        │        │  Heurística + LLM (opt)  │
+└────────────────────────┘        └──────────────────────────┘
+            │                              │
+            │                              ├── Vitest + Supertest
+            │                              └── CORS dinâmico (CLIENT_ORIGIN)
+            └── VITE_API_URL (env)
+```
+
+- **Frontend:** React 19, Vite 7, Tailwind CSS 3, Lucide React.
+- **Backend:** Node.js, Express 5, TypeScript, Zod.
+- **Testes:** Vitest + Supertest (unitários e de integração).
+- **Deploy:** Vercel (frontend) + Render (backend).
+
+---
+
+## 📦 Instalação e Execução Local
+
+```bash
+# Clone o repositório
+git clone https://github.com/Japapaz696/OmniOps-AI.git
+cd OmniOps-AI
+
+# Instale as dependências
+npm install
+
+# Execute em modo desenvolvimento (frontend + backend)
+npm run dev
+
+# Ou apenas o backend
+npm run dev:server
+
+# Testes
+npm test
+
+# Typecheck
+npm run typecheck
+
+# Build de produção
+npm run build
+```
+
+### Variáveis de Ambiente
+
+**Backend (`server/.env` ou ambiente):**
+- `PORT` — porta do servidor (padrão `3001`).
+- `CLIENT_ORIGIN` — origens permitidas pelo CORS (separadas por vírgula).
+- `GROQ_API_KEY` / `OPENAI_API_KEY` — opcionais, para análise via LLM.
+
+**Frontend (`.env`):**
+- `VITE_API_URL` — URL base da API (padrão `http://localhost:3001`).
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+OmniOps-AI/
+├── server/
+│   ├── index.ts
+│   ├── services/analyzer.ts
+│   ├── schemas/analysis.ts
+│   └── tests/
+├── src/
+│   ├── App.tsx
+│   ├── index.css
+│   └── services/voice.ts
+├── package.json
+└── README.md
+```
+
+---
+
+## 📄 Licença
+
+Projeto de demonstração — uso educacional e tático.
