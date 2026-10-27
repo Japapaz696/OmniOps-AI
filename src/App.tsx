@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { speakDiagnostic } from './services/voice'
 import {
   Shield,
@@ -86,10 +86,15 @@ interface Diagnostic {
 
 function App() {
   const [selectedPreset, setSelectedPreset] = useState(presets[0])
+  const [code, setCode] = useState(presets[0].code)
   const [selectedModel, setSelectedModel] = useState('GPT-4o')
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null)
   const [loading, setLoading] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(true)
+
+  useEffect(() => {
+    setCode(selectedPreset.code)
+  }, [selectedPreset])
 
   const analyzeCode = async () => {
     setLoading(true)
@@ -101,7 +106,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: selectedPreset.code,
+          code,
           model: selectedModel,
         }),
       })
@@ -126,9 +131,9 @@ function App() {
 
   return (
     <div className="relative min-h-screen text-cyan-100 font-data overflow-hidden">
-      <div className="hud-bg" />
-      <div className="hud-grid" />
-      <div className="scanlines" />
+      <div className="hud-bg pointer-events-none" />
+      <div className="hud-grid pointer-events-none" />
+      <div className="scanlines pointer-events-none" />
 
       <div className="relative z-10 flex flex-col h-screen">
         {/* HEADER */}
@@ -215,9 +220,13 @@ function App() {
 
               <div className="flex-1 p-4 overflow-auto relative">
                 {loading && <div className="scan-bar" />}
-                <pre className="text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed">
-                  <code>{selectedPreset.code}</code>
-                </pre>
+                <textarea
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  disabled={loading}
+                  spellCheck={false}
+                  className="w-full h-full min-h-[200px] bg-transparent text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed resize-none focus:outline-none disabled:opacity-60"
+                />
               </div>
             </section>
 
