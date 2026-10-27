@@ -60,18 +60,54 @@ app.post('/api/tts', async (req, res) => {
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'text is required' });
     }
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(503).json({ error: 'OpenAI API key not configured' });
+
+    // Primary: ElevenLabs cinematic TTS
+    const elevenKey = process.env.ELEVENLABS_API_KEY;
+    const elevenVoice = process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB';
+    if (elevenKey) {
+      try {
+        const elRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenVoice}`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': elevenKey,
+            'Content-Type': 'application/json',
+            Accept: 'audio/mpeg',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+          }),
+        });
+        if (elRes.ok) {
+          const arrayBuffer = await elRes.arrayBuffer();
+          res.setHeader('Content-Type', 'audio/mpeg');
+          return res.send(Buffer.from(arrayBuffer));
+        }
+        console.error('ElevenLabs TTS failed:', elRes.status, await elRes.text());
+      } catch (elErr) {
+        console.error('ElevenLabs TTS error:', elErr);
+      }
     }
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const speech = await openai.audio.speech.create({
-      model: 'tts-1',
-      voice: 'onyx',
-      input: text,
-    });
-    const buffer = Buffer.from(await speech.arrayBuffer());
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.send(buffer);
+
+    // Fallback: OpenAI TTS
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const speech = await openai.audio.speech.create({
+          model: 'tts-1',
+          voice: 'onyx',
+          input: text,
+        });
+        const buffer = Buffer.from(await speech.arrayBuffer());
+        res.setHeader('Content-Type', 'audio/mpeg');
+        return res.send(buffer);
+      } catch (oaiErr) {
+        console.error('OpenAI TTS error:', oaiErr);
+      }
+    }
+
+    return res.status(503).json({ error: 'No TTS provider configured' });
   } catch (error) {
     console.error('TTS error:', error);
     res.status(500).json({ error: 'TTS generation failed' });
