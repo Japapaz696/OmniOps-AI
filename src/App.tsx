@@ -219,13 +219,12 @@ function App() {
               </div>
 
               <div className="flex-1 p-4 overflow-auto relative">
-                {loading && <div className="scan-bar" />}
+                {loading && <div className="scan-bar pointer-events-none" />}
                 <textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  disabled={loading}
                   spellCheck={false}
-                  className="w-full h-full min-h-[200px] bg-transparent text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed resize-none focus:outline-none disabled:opacity-60"
+                  className="w-full h-full min-h-[200px] bg-transparent text-sm font-mono text-cyan-100/90 whitespace-pre-wrap leading-relaxed resize-none focus:outline-none"
                 />
               </div>
             </section>
@@ -243,7 +242,7 @@ function App() {
               </div>
 
               <div className="flex-1 p-4 space-y-4 overflow-auto relative">
-                {loading && <div className="scan-bar" />}
+                {loading && <div className="scan-bar pointer-events-none" />}
                 {loading ? (
                   <div className="flex flex-col items-center justify-center h-full gap-4">
                     <Loader2 className="w-10 h-10 animate-spin text-cyan-400" />
