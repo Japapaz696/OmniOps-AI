@@ -1,10 +1,10 @@
 export async function speakDiagnostic(riskLevel: string, summary: string): Promise<void> {
   const text = `Diagnóstico concluído. Nível de risco: ${riskLevel}. ${summary}`;
 
-  // Primary: OpenAI TTS (onyx) via backend
+  // Primary: network TTS via backend (Render)
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-    const response = await fetch(`${apiUrl}/api/tts`, {
+    const backendUrl = import.meta.env.VITE_API_URL || 'https://omniops-backend.onrender.com';
+    const response = await fetch(`${backendUrl}/api/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -12,10 +12,8 @@ export async function speakDiagnostic(riskLevel: string, summary: string): Promi
 
     if (response.ok) {
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      const audio = new Audio(URL.createObjectURL(blob));
       await audio.play();
-      audio.onended = () => URL.revokeObjectURL(url);
       return;
     }
   } catch {
