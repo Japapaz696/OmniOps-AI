@@ -96,6 +96,43 @@ function App() {
     setCode(selectedPreset.code)
   }, [selectedPreset])
 
+  const downloadReport = () => {
+    if (!diagnostic) return
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const md = `# OmniOps AI — Relatório de Auditoria
+
+**Data/Hora do Escaneamento:** ${new Date().toLocaleString('pt-BR')}
+
+## Classificação
+- **Categoria OWASP:** ${diagnostic.owaspTag}
+- **Nível de Risco:** ${diagnostic.riskLevel}
+
+## Causa Raiz
+${diagnostic.rootCause}
+
+## Solução Sugerida
+
+### Código Vulnerável
+\`\`\`
+${diagnostic.diff.original}
+\`\`\`
+
+### Código Corrigido
+\`\`\`
+${diagnostic.diff.corrected}
+\`\`\`
+`
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `omniops-audit-${timestamp}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const analyzeCode = async () => {
     setLoading(true)
     try {
@@ -237,9 +274,19 @@ function App() {
               <div className="hud-corner hud-corner-bl" />
               <div className="hud-corner hud-corner-br" />
 
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-cyan-500/20 bg-slate-950/40">
-                <Activity className="w-4 h-4 text-cyan-400" />
-                <span className="text-sm font-semibold tracking-wider text-cyan-200">DIAGNÓSTICO EM TEMPO REAL</span>
+              <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-500/20 bg-slate-950/40">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm font-semibold tracking-wider text-cyan-200">DIAGNÓSTICO EM TEMPO REAL</span>
+                </div>
+                {diagnostic && (
+                  <button
+                    onClick={downloadReport}
+                    className="btn-hud px-3 py-1 border border-cyan-400/60 bg-cyan-500/10 rounded-md text-xs font-semibold tracking-wider text-cyan-200 hover:bg-cyan-500/20 transition-colors"
+                  >
+                    BAIXAR RELATÓRIO
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 p-4 space-y-4 overflow-auto relative">
