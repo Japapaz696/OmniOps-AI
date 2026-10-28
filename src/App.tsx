@@ -99,28 +99,45 @@ function App() {
   const downloadReport = () => {
     if (!diagnostic) return
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const md = `# OmniOps AI — Relatório de Auditoria
+    const utc = new Date().toUTCString()
+    const md = `# 🛡️ OmniOps AI — Relatório Tático de Auditoria
 
-**Data/Hora do Escaneamento:** ${new Date().toLocaleString('pt-BR')}
+> J.A.R.V.I.S. SECURITY ENGINE — Análise automatizada de vulnerabilidades
 
-## Classificação
+**Data/Hora (UTC):** ${utc}
+**Timestamp:** ${timestamp}
+
+---
+
+## Classificação de Risco
 - **Categoria OWASP:** ${diagnostic.owaspTag}
-- **Nível de Risco:** ${diagnostic.riskLevel}
+- **Grau de Risco:** ${diagnostic.riskLevel}
 
-## Causa Raiz
+## Descrição da Falha
 ${diagnostic.rootCause}
 
-## Solução Sugerida
+## Causa Raiz
+A análise heurística identificou o padrão acima como violação de boas práticas de segurança, resultando em exposição potencial conforme a categoria OWASP listada.
+
+## Mitigação Recomendada
+Aplicar o patch corrigido abaixo, validando entrada do usuário, restringindo origens e adicionando controles de taxa quando aplicável.
+
+---
+
+## Comparativo de Código
 
 ### Código Vulnerável
 \`\`\`
 ${diagnostic.diff.original}
 \`\`\`
 
-### Código Corrigido
+### Patch Corrigido
 \`\`\`
 ${diagnostic.diff.corrected}
 \`\`\`
+
+---
+*Gerado automaticamente por OmniOps AI.*
 `
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -284,7 +301,7 @@ ${diagnostic.diff.corrected}
                     onClick={downloadReport}
                     className="btn-hud px-3 py-1 border border-cyan-400/60 bg-cyan-500/10 rounded-md text-xs font-semibold tracking-wider text-cyan-200 hover:bg-cyan-500/20 transition-colors"
                   >
-                    BAIXAR RELATÓRIO
+                    EXPORTAR RELATÓRIO
                   </button>
                 )}
               </div>
